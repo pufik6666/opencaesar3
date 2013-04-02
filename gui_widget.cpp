@@ -25,7 +25,7 @@
 #include "pic_loader.hpp"
 #include "sdl_facade.hpp"
 #include "gui_paneling.hpp"
-
+#include "custom_event.hpp"
 
 
 
@@ -234,11 +234,13 @@ void Widget::handleEvent(SDL_Event &event)
       }
       _underMouse = underMouse;  // save the new state
    }
-   else if (event.type == SDL_MOUSEBUTTONDOWN)
+   else if (event.type == SDL_USEREVENT && event.user.code == SDL_USER_MOUSECLICK)
    {
       // mouse click
+      SDL_USER_MouseClickEvent &uevent = *(SDL_USER_MouseClickEvent*)event.user.data1;
+
       // check if the mouse is on the widget (maybe the widget did not receive former mouseMove events)
-      bool underMouse = contains(event.button.x, event.button.y);
+      bool underMouse = contains(uevent.x, uevent.y);
       if (underMouse && ! _underMouse)
       {
          onMouseEnter();
@@ -249,7 +251,7 @@ void Widget::handleEvent(SDL_Event &event)
       }
       _underMouse = underMouse;  // save the new state
 
-      if (event.button.button == SDL_BUTTON_LEFT)
+      if (uevent.button == SDL_BUTTON_LEFT)
       {
          if (_underMouse)
          {
@@ -315,15 +317,28 @@ Widget* WidgetGroup::get_widget_at(const int x, const int y)
 void WidgetGroup::handleEvent(SDL_Event &event)
 {
    SDL_Event event2 = event;
+
+   // translate events relative to (x, y)
    if (event.type == SDL_MOUSEMOTION)
    {
       event2.motion.x -= _x;
       event2.motion.y -= _y;
    }
-   else if (event.type == SDL_MOUSEBUTTONDOWN)
+   else if (event.type == SDL_USEREVENT && event.user.code == SDL_USER_MOUSECLICK)
    {
-      event2.button.x -= _x;
-      event2.button.y -= _y;
+      // mouse click
+      SDL_USER_MouseClickEvent &uevent = *(SDL_USER_MouseClickEvent*)event.user.data1;
+      uevent.x -= _x;
+      uevent.y -= _y;
+   }
+   else if (event.type == SDL_USEREVENT && event.user.code == SDL_USER_MOUSEDRAG)
+   {
+      // mouse drag
+      SDL_USER_MouseDragEvent &uevent = *(SDL_USER_MouseDragEvent*)event.user.data1;
+      uevent.x1 -= _x;
+      uevent.y1 -= _y;
+      uevent.x2 -= _x;
+      uevent.y2 -= _y;
    }
 
    for (std::list<Widget*>::iterator itWidget = _widget_list.begin(); itWidget != _widget_list.end(); ++itWidget)

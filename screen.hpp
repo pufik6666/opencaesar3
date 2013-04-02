@@ -19,7 +19,8 @@
 #ifndef SCREEN_HPP
 #define SCREEN_HPP
 
-#include <gui_widget.hpp>
+#include "gui_widget.hpp"
+#include "custom_event.hpp"
 
 class Screen: public WidgetListener
 {
@@ -46,6 +47,7 @@ protected:
 
    WidgetEvent _wevent;  // event to pass to the main loop
    bool _isStopped;  // screen needs to stop its loop
+   CustomEvent _eventProcessor;  // process click/click&drag...   
 };
 
 

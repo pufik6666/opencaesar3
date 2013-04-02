@@ -252,16 +252,19 @@ void GuiTilemap::handleEvent(SDL_Event &event)
          int j = tile->getJ();
          // std::cout << "Mouse move to tile ("<<i<<","<<j<<")" << std::endl;
 
+         discardPreview();
          previewBuild(i, j);
          previewRemove(i, j);
       }
    }
 
-   if (event.type == SDL_MOUSEBUTTONDOWN)
+   if (event.type == SDL_USEREVENT && event.user.code == SDL_USER_MOUSECLICK)
    {
-      int button = event.button.button;
-      int x = event.button.x;
-      int y = event.button.y;
+      SDL_USER_MouseClickEvent &uevent = *(SDL_USER_MouseClickEvent*)event.user.data1;
+
+      int button = uevent.button;
+      int x = uevent.x;
+      int y = uevent.y;
 
       Tile* tile = getTileXY(x, y);  // tile under the cursor (or NULL)
       if (tile == NULL)
@@ -329,6 +332,79 @@ void GuiTilemap::handleEvent(SDL_Event &event)
          }
       }
 
+   }
+
+   if (event.type == SDL_USEREVENT && event.user.code == SDL_USER_MOUSEDRAG)
+   {
+      SDL_USER_MouseDragEvent &uevent = *(SDL_USER_MouseDragEvent*)event.user.data1;
+
+      int button = uevent.button;
+      int state = uevent.state;
+      int x1 = uevent.x1;
+      int y1 = uevent.y1;
+      int x2 = uevent.x2;
+      int y2 = uevent.y2;
+
+      Tile* tile1 = getTileXY(x1, y1);  // tile under the cursor press (or NULL)
+      Tile* tile2 = getTileXY(x2, y2);  // tile under the cursor move (or NULL)
+
+      if (tile1 != NULL && tile2 != NULL)
+      {
+         int i1 = std::min(tile1->getI(), tile2->getI());
+         int j1 = std::min(tile1->getJ(), tile2->getJ());
+         int i2 = std::max(tile1->getI(), tile2->getI());
+         int j2 = std::max(tile1->getJ(), tile2->getJ());
+
+         discardPreview();
+         if (state == 0 || state == 1)
+         {
+            // press button and drag
+            // std::cout << "Mouse move to tile ("<<i<<","<<j<<")" << std::endl;
+            if ((_buildInstance != NULL && _buildInstance->getType() == B_HOUSE) || _removeTool)
+            {
+               // rectangular area
+               std::list<Tile*> tiles = _tilemap->getFilledRectangle(i1, j1, i2, j2);
+               for (std::list<Tile*>::iterator itTile = tiles.begin(); itTile != tiles.end(); ++itTile)
+               {
+                  Tile& tile = **itTile;
+                  int i = tile.getI();
+                  int j = tile.getJ();
+                  previewBuild(i, j);
+                  previewRemove(i, j);
+               }
+            }
+         }
+
+         if (state == 2)
+         {
+            // release button
+
+            if ((_buildInstance != NULL && _buildInstance->getType() == B_HOUSE) || _removeTool)
+            {
+               // rectangular area
+               std::list<Tile*> tiles = _tilemap->getFilledRectangle(i1, j1, i2, j2);
+               for (std::list<Tile*>::iterator itTile = tiles.begin(); itTile != tiles.end(); ++itTile)
+               {
+                  Tile& tile = **itTile;
+                  int i = tile.getI();
+                  int j = tile.getJ();
+
+                  if (_removeTool)
+                  {
+                     _city->clearLand(i, j);
+                  }
+                  else
+                  {
+                     Construction& overlay = *_buildInstance;
+                     if (overlay.canBuild(i, j))
+                     {
+                        _city->build(overlay, i, j);
+                     }
+                  }
+               }
+            }
+         }
+      }
    }
 }
 

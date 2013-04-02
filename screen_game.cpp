@@ -212,9 +212,8 @@ void ScreenGame::handleEvent(SDL_Event &event)
    }
 
    bool isPreview = true;
-   switch (event.type)
+   if (event.type == SDL_MOUSEMOTION)
    {
-   case SDL_MOUSEMOTION:
       if (_menu->contains(event.button.x, event.button.y))
       {
          isPreview = false;
@@ -222,9 +221,12 @@ void ScreenGame::handleEvent(SDL_Event &event)
       _guiTilemap.setPreview(isPreview);
       _menu->handleEvent(event);
       _guiTilemap.handleEvent(event);
-      break;
-   case SDL_MOUSEBUTTONDOWN:
-      if (_menu->contains(event.button.x, event.button.y))
+   }
+   else if (event.type == SDL_USEREVENT && event.user.code == SDL_USER_MOUSECLICK)
+   {
+      SDL_USER_MouseClickEvent &uevent = *(SDL_USER_MouseClickEvent*)event.user.data1;
+
+      if (_menu->contains(uevent.x, uevent.y))
       {
          _menu->handleEvent(event);
       }
@@ -232,35 +234,42 @@ void ScreenGame::handleEvent(SDL_Event &event)
       {
          _guiTilemap.handleEvent(event);
       }
-      break;
-   case SDL_KEYDOWN:
+   }
+   else if (event.type == SDL_USEREVENT && event.user.code == SDL_USER_MOUSEDRAG)
+   {
+      SDL_USER_MouseDragEvent &uevent = *(SDL_USER_MouseDragEvent*)event.user.data1;
+
+      if (_menu->contains(uevent.x1, uevent.y1))
+      {
+         _menu->handleEvent(event);
+      }
+      else
+      {
+         _guiTilemap.handleEvent(event);
+      }
+   }
+   else if (event.type == SDL_KEYDOWN)
+   {
       if (event.key.keysym.sym == SDLK_UP)
       {
-	 std::cout << "SDLK_UP was pressed" << std::endl;
          getMapArea().moveUp(1 + 4*isModShift());
       }
       else if (event.key.keysym.sym == SDLK_DOWN)
       {
-	 std::cout << "SDLK_DOWN was pressed" << std::endl;
          getMapArea().moveDown(1 + 4*isModShift());
       }
       else if (event.key.keysym.sym == SDLK_RIGHT)
       {
-	 std::cout << "SDLK_RIGHT was pressed" << std::endl;
          getMapArea().moveRight(1 + 4*isModShift());
       }
       else if (event.key.keysym.sym == SDLK_LEFT)
       {
-	 std::cout << "SDLK_LEFT was pressed" << std::endl;
          getMapArea().moveLeft(1 + 4*isModShift());
       }
       else if (event.key.keysym.sym == SDLK_ESCAPE)
       {
-	 std::cout << "SDLK_ESCAPE was pressed" << std::endl;
          stop();
       }
-      
-      break;
    }
 
 }

@@ -32,6 +32,7 @@
 #include "building_data.hpp"
 #include "city.hpp"
 #include "scenario.hpp"
+#include "custom_event.hpp"
 
 static const std::string panelBgName = "paneling";
 static const unsigned int panelBgStatus = 15;
@@ -376,11 +377,12 @@ BuildMenu::BuildMenu()
 
 void BuildMenu::handleEvent(SDL_Event &event)
 {
-   if (event.type == SDL_MOUSEBUTTONDOWN)
+   if (event.type == SDL_USEREVENT && event.user.code == SDL_USER_MOUSECLICK)
    {
       // mouse click
+      SDL_USER_MouseClickEvent &uevent = *(SDL_USER_MouseClickEvent*)event.user.data1;
 
-      if (event.button.button == SDL_BUTTON_RIGHT)
+      if (uevent.button == SDL_BUTTON_RIGHT)
       {
          // right click
          _isDeleted = true;
